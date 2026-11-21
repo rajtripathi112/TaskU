@@ -1,0 +1,406 @@
+People Connect - Work Log
+========================
+
+2026-11-14
+- Created the initial backend and frontend folder scaffold, including empty
+  Python modules for the planned application components.
+- Added backend/schema.sql defining the tasks table, its constraints, timestamp
+  defaults, and the updated_at trigger.
+- Created backend/people_connect.sqlite3 from schema.sql with Python sqlite3.
+- Verified the table columns, primary key, constraints, timestamp behavior,
+  foreign-key setting, and SQLite integrity. Verification test rows were
+  rolled back; no sample records were left in the database.
+- Added SQLAlchemy 2.x dependencies, a resolved-path SQLite connection,
+  reusable session dependency, declarative Base, and a Task mapping for the
+  existing tasks table.
+- Added a read-only database verification command, connected /health to the
+  database dependency, and added isolated temporary-database tests for CRUD,
+  updated_at trigger behavior, schema mapping, and the health endpoint.
+- Installed the declared dependencies. All three pytest integration tests
+  passed; the read-only verifier confirmed 0 existing task records and the
+  live /health endpoint returned status=ok.
+- Added GET /tasks/ with response schemas, status filtering (including All),
+  database-calculated status counts, newest-first pagination (up to five per
+  page), and generic database error handling.
+- Added isolated API tests for empty and populated results, task fields, status
+  filters, filter-independent counts, pagination, invalid query parameters,
+  database errors, and health endpoint behavior. No rows were added to the
+  project database.
+- Added POST /tasks/ with Pydantic request validation, date-order checks,
+  database commit/refresh handling, and a 201 response using TaskResponse.
+- Added temporary-database tests for task creation, persistence, optional
+  fields, required fields, enum/date/length validation, and generic database
+  errors. The project database was not used for creation tests.
+- Added GET /tasks/{task_id} using the existing database dependency and
+  TaskResponse schema, returning 404 for missing records and a generic 503
+  for database errors.
+- Added temporary-database tests for task detail fields, not-found behavior,
+  and database failures while retaining the existing list/create endpoint tests.
+- Added PUT /tasks/{task_id} with a full-update schema requiring every editable
+  field, shared POST validation rules, generic database-error handling, and
+  reliance on the existing updated_at trigger.
+- Added temporary-database tests for full and nullable-field updates,
+  required fields, validation limits, missing IDs, database failures, and
+  updated_at behavior.
+- Ran `python -m pytest -q`: 58 tests passed. Confirmed the real database
+  still has 0 task records and the updated_at trigger remains present.
+- Added DELETE /tasks/{task_id} using the existing database session; successful
+  deletions return 204, missing IDs return 404, and database failures return a
+  generic 503 after rollback.
+- Added temporary-database tests for deletion, persistence removal, missing
+  IDs, repeated deletion, and database errors while retaining all existing
+  API tests.
+- Final audit run: `python -m pytest -q` passed 62 tests before adding OpenAPI
+  contract coverage; database verification found the expected 10 columns,
+  trigger, zero records, and `integrity_check=ok`.
+- Changed the project-database mapping test to use a temporary DB and
+  documented existing 404/503 responses in OpenAPI. Added OpenAPI request and
+  error contract assertions.
+- Final validation after those audit fixes: `python -m pytest -q` passed 63
+  tests; `/docs` and `/openapi.json` returned 200, the real database still has
+  zero records, and SQLite `integrity_check` returned `ok`.
+- 2026-11-14: Inspected the project for Phase 3 frontend planning. The
+  frontend directory has no source files; no SRS, ER diagram, or prototype
+  screenshot/reference files were found in the workspace. Reviewed the
+  existing backend routes, schemas, database connection, and project
+  handover documents. No application or database files were changed, and
+  tests were not rerun for this inspection-only step.
+- 2026-11-14: Prepared a provisional React frontend architecture proposal
+  based only on the verified task API and the prior stack discussion.
+  React was requested in the current prompt; JavaScript/Vite and route
+  behavior remain subject to explicit approval and the unavailable
+  SRS/prototype. No frontend code, dependencies, or application files were
+  created or changed.
+- 2026-11-14: User identified `E:\task\prototype.html` and approved
+  React + JavaScript + Vite for frontend architecture planning. Inspected
+  the prototype: it defines one responsive Tasks screen, status chips,
+  five-item client-side pagination, a create/edit modal, details drawer,
+  delete confirmation, keyboard/focus behavior, four sample tasks, and
+  `localStorage` persistence under `pc-tasks-v2`. The prototype has no
+  backend calls. Compared its abbreviated task property names with the
+  backend API field names. No application or database changes were made.
+- User approved the proposed single-screen React + JavaScript + Vite
+  architecture. For future implementation, they chose to ignore legacy
+  prototype localStorage/sample tasks in favor of the backend as source of
+  truth, remove or adjust unsupported account/project labels, and use a Vite
+  development proxy to FastAPI. No frontend scaffold or application code was
+  created in this planning step.
+- 2026-11-15: Initialized `frontend/` with React + JavaScript + Vite.
+  Configured Vite on `localhost:5173` to proxy `/api` to
+  `127.0.0.1:8000` and strip the proxy prefix; added `/api` as the frontend
+  API base path. Replaced the Vite demo screen with a minimal React readiness
+  page and created the approved `api`, `pages`, `components`, and `styles`
+  source directories. Removed unneeded template-only typings, linter, and
+  unused demo assets. `npm run build` succeeded; live frontend returned HTTP
+  200 and `/api/health` returned `status=ok`. Temporary verification servers
+  were stopped. No task UI/CRUD calls or backend/database changes were made.
+- 2026-11-16: Implemented the prototype-based React Tasks UI in
+  `frontend/src/`: app shell, responsive sidebar, task header, status filters,
+  empty state/task list and rows, five-item pagination, add/edit modal, task
+  details panel, delete confirmation, and toast. The initial list is empty;
+  UI-created/edited/deleted tasks use component state only and reset on reload.
+  No API requests, localStorage, sample records, backend edits, or database
+  writes were added.
+- Preserved the prototype's layout, colors, typography, responsive breakpoints,
+  automatic light/dark theme behavior, reduced-motion handling, keyboard
+  Escape behavior, focus trapping/restoration, date presentation, and
+  new/edited-row flash. The task count uses the approved “Total tasks” wording;
+  account/sign-in text remains static decoration.
+- Browser verification covered empty state, required-field validation,
+  create/view/edit/delete and delete cancellation, Escape, status filters,
+  pagination across six temporary tasks, modal/panel/confirmation focus
+  behavior, mobile menu, dark theme, and a 384 CSS-pixel mobile viewport with
+  no horizontal overflow. A clean browser run reported no runtime or console
+  errors.
+- Frontend build passed with
+  `Set-Location E:\task\frontend; npm.cmd run build`. The development server
+  returned HTTP 200. No formal frontend test suite is configured; browser
+  interaction checks were used. API integration remains the next phase and
+  has not started.
+- 2026-11-16: Inspected the live FastAPI OpenAPI contract and connected the
+  React Tasks page to `GET /tasks/` through the existing `/api` Vite proxy.
+  The response contract is `items`, `pagination` (`page`, `page_size`,
+  `total`, `total_pages`), and `counts` (`all`, `to_do`, `in_progress`,
+  `done`). Task fields are snake_case (`employee_name`, `start_date`,
+  `due_date`) and are mapped in the API client to the existing UI shape.
+  “All” omits the `status` query parameter; other filters pass the selected
+  status. Requests use the backend's `page` and `page_size=5`; response counts
+  and pagination metadata drive the UI without client-side filtering or
+  slicing.
+- Added loading, empty, retryable error, and malformed/empty-response handling.
+  HTTP 422, 404, and 503, plus network failures, display generic user-safe
+  messages without backend detail/stack traces. Task create/edit/delete
+  controls are disabled and no local fake records or mutation requests are
+  used pending approval of those operations. Nullable status and priority
+  values from the actual response are displayed as “Not set.”
+- Files changed: `frontend/src/api/client.js`,
+  `frontend/src/pages/TasksPage.jsx`,
+  `frontend/src/components/TaskHeader.jsx`,
+  `frontend/src/components/StatusFilters.jsx`,
+  `frontend/src/components/TaskList.jsx`,
+  `frontend/src/components/TaskRow.jsx`,
+  `frontend/src/components/Pagination.jsx`,
+  `frontend/src/components/TaskDetailsPanel.jsx`,
+  `frontend/src/styles/app.css`, and this work log.
+- Verification: started FastAPI and Vite. `/docs`, `/openapi.json`, the
+  frontend, and proxied GET requests returned HTTP 200. Live SQLite-backed
+  GET returned `items=[]`, `pagination={page:1,page_size:5,total:0,
+  total_pages:0}`, and all status counts zero; the Tasks page displayed the
+  empty state. Status-filter requests used the expected query values, while
+  All omitted `status`. A proxied `page=2&page_size=5` request returned
+  `page=2` and no rows. Error UI was checked using transient HTTP/network
+  response interception only; no task records were created. The final
+  `Set-Location E:\task\frontend; npm.cmd run build` passed. No backend or
+  schema files were modified, and no database writes were made. Because the
+  live database is empty, the visual next/previous controls are not rendered;
+  server pagination parameters and metadata were verified through GET.
+- Remaining work: POST, PUT, and DELETE integration are not implemented and
+  require approval. Pagination controls can be exercised against multiple
+  real tasks after the approved create operation is available.
+- 2026-11-16: Implemented the approved POST `/tasks/` integration. The live
+  OpenAPI/schema inspection confirmed required fields `name`, `employee_name`,
+  `priority`, `status`, and `due_date`; `description` and `start_date` are
+  optional and nullable. The shared API client maps the Add Task form values
+  to the exact snake_case request keys and sends blank optional values as
+  `null`. The 201 TaskResponse is validated and normalized.
+- Frontend validation now enforces the backend length limits (name 80,
+  employee 60, description 400), the supported priority/status options,
+  required name/employee/due date, ISO calendar dates, and start-date ordering.
+  Backend 422 field errors are mapped to form messages. HTTP 503, network, and
+  unexpected errors display friendly messages; entered values remain in the
+  open modal on failure. Submission locks the form and guards against
+  duplicate requests.
+- On a successful response the modal closes, a success toast appears, the
+  selected filter is reset to All so the new task is not hidden, and the
+  existing GET list is refreshed from page 1. Server counts/pagination are
+  refreshed by that GET. Edit and Delete remain disabled and were not
+  integrated.
+- Files changed: `frontend/src/api/client.js`,
+  `frontend/src/components/TaskFormModal.jsx`,
+  `frontend/src/components/TaskHeader.jsx`,
+  `frontend/src/components/TaskList.jsx`,
+  `frontend/src/pages/TasksPage.jsx`,
+  `frontend/src/styles/app.css`, and this work log.
+- Verification: `Set-Location E:\task\backend; python -m pytest -q` passed
+  **63 tests** (13 existing deprecation warnings). Browser checks covered
+  required fields, max lengths, date ordering, 422 field feedback, 503,
+  unexpected and network errors, preservation of form values, and
+  duplicate-submit prevention. An end-to-end POST through Vite/FastAPI
+  returned successfully; the task appeared in the refreshed list and counts,
+  and blank description/start date were sent and persisted as null.
+- End-to-end POST used a temporary SQLite database under the system temp
+  directory with the existing schema. Read-only verification found one task
+  in that temporary test DB with `integrity_check=ok`; the real project DB
+  remained at zero tasks with `integrity_check=ok`. No backend source or
+  schema changes were made. `Set-Location E:\task\frontend; npm.cmd run build`
+  passed.
+- Remaining work: PUT and DELETE integrations are not implemented. Existing
+  GET task detail behavior was not changed.
+- 2026-11-16: Integrated GET `/tasks/{task_id}` with the existing View action.
+  The task row now passes its ID to the page, which requests detail data through
+  the shared API client and renders the existing details panel with a loading,
+  error, or response state. Detail responses are normalized against the
+  backend's `TaskResponse`, including nullable created/updated timestamps.
+- The details panel now shows the returned task name, description, employee,
+  priority, status, start/due dates, and created/updated dates. It retains the
+  prototype layout and existing close, Escape, focus-return, and focus-trap
+  behavior. Request cancellation and a request-generation guard prevent
+  responses for a closed or previously selected task from replacing current
+  details.
+- HTTP 404, HTTP 503, network failures, empty/malformed responses, and
+  unexpected errors display friendly messages inside the panel without
+  exposing backend details. The panel remains closable in loading and error
+  states.
+- Files changed: `frontend/src/api/client.js`,
+  `frontend/src/components/TaskRow.jsx`,
+  `frontend/src/components/TaskDetailsPanel.jsx`,
+  `frontend/src/pages/TasksPage.jsx`,
+  `frontend/src/styles/app.css`, and this work log.
+- Verification: `Set-Location E:\task\frontend; npm.cmd run build` passed.
+  `Set-Location E:\task\backend; python -m pytest -q tests/test_tasks_api.py
+  -k get_task` passed **3 tests** using isolated test databases. Browser
+  verification through Vite/FastAPI used a temporary SQLite database: the
+  selected ID was requested, task fields and timestamps displayed, loading and
+  close/focus-return behavior worked, delayed stale responses were ignored,
+  404/503/network errors were friendly, and filter/pagination requests still
+  worked. No backend source or schema files were modified.
+- Temporary server and database verification did not write to the real
+  database. Remaining work: PUT/update and DELETE integrations are not
+  implemented and require approval.
+- 2026-11-16: Integrated PUT `/tasks/{task_id}` with the existing Edit actions
+  in task rows and the task details panel. The edit form is populated from the
+  complete task data already returned by GET `/tasks/` or GET
+  `/tasks/{task_id}`. Successful update responses replace the open panel data,
+  close the modal, show a success toast, and refresh the list/counts while
+  retaining the selected status filter.
+- The shared API layer maps the form to all seven backend-required update
+  fields: `name`, `description`, `employee_name`, `priority`, `status`,
+  `start_date`, and `due_date`. Blank description and start date are sent as
+  `null`. The existing validation enforces the backend length, enum, required
+  field, date-format, and start/due ordering rules. Null priority or status
+  values remain unselected for edit and must be explicitly chosen before PUT.
+- HTTP 422 field errors, 404, 503, network failures, and unexpected responses
+  use friendly messages without exposing internal details. Failed submissions
+  keep the edit modal open and preserve the entered values. Submission locking
+  prevents duplicate PUT requests. Delete controls remain disabled; DELETE was
+  not implemented.
+- Files changed: `frontend/src/api/client.js`,
+  `frontend/src/components/TaskRow.jsx`,
+  `frontend/src/components/TaskList.jsx`,
+  `frontend/src/components/TaskFormModal.jsx`,
+  `frontend/src/components/TaskDetailsPanel.jsx`,
+  `frontend/src/pages/TasksPage.jsx`, and this work log.
+- Verification: `Set-Location E:\task\frontend; npm.cmd run build` passed.
+  `Set-Location E:\task\backend; python -m pytest -q tests/test_tasks_api.py
+  -k 'create_task or get_task or update_task'` passed **41 tests** (19
+  deselected; 13 existing deprecation warnings). Browser testing with an
+  isolated SQLite database verified edit-form population, all-field PUT
+  payloads, successful persistence, filtered counts, details-panel refresh,
+  changed `updated_at`, field/date validation, 422/404/503/network failures,
+  preserved values after failure, and duplicate-submit prevention. The
+  existing POST flow also created a task successfully after the shared JSON
+  writer was reused.
+- The temporary test database contained only controlled test records and
+  passed `integrity_check`; the real database remained at zero task records
+  with `integrity_check=ok`. No backend source or schema files were modified.
+  Remaining work: DELETE integration requires approval.
+- 2026-11-16: Integrated DELETE `/tasks/{task_id}` into the existing row and
+  details-panel actions using the existing confirmation dialog. The shared API
+  client handles the backend's `204 No Content` response without parsing a
+  response body. The dialog identifies the task, prevents duplicate requests,
+  shows a pending state, and remains open with a friendly error and retry
+  option after failures.
+- Successful deletion closes the dialog, displays a toast, refreshes the
+  server-provided list and counts, keeps the selected status filter, moves to
+  the previous valid page when the current page becomes invalid, and closes
+  details for the deleted task. HTTP 404, HTTP 503, network failures, and
+  unexpected responses do not optimistically remove tasks or expose backend
+  details.
+- Files changed: `frontend/src/api/client.js`,
+  `frontend/src/components/DeleteConfirmation.jsx`,
+  `frontend/src/components/TaskRow.jsx`,
+  `frontend/src/components/TaskList.jsx`,
+  `frontend/src/components/TaskDetailsPanel.jsx`,
+  `frontend/src/pages/TasksPage.jsx`, and this work log.
+- Verification: `npm.cmd run build` passed. The full backend task API suite
+  passed **60 tests** (13 existing deprecation warnings); the focused DELETE
+  selection passed **4 tests**. Browser verification through Vite and FastAPI
+  against a temporary SQLite database confirmed cancel made no DELETE request,
+  successful DELETE returned 204 and refreshed rows/counts, deletion from the
+  final page returned to page 1, deletion closed matching task details, 404 /
+  503 / network failures preserved the task and displayed friendly messages,
+  and a rapid double-click sent one DELETE request.
+- The temporary database was isolated under the OS temp directory and held
+  only controlled verification tasks. The real database remained untouched:
+  task count **0**, `integrity_check=ok`. No backend source or schema files
+  were modified. Remaining work: none for Phase 4, Step 5.
+
+2026-11-16 - Phase 5: End-to-end testing and quality assurance
+- Compared the implementation with the available project records and
+  `prototype.html`. No SRS file was present. The architecture/status/next-step
+  handover documents and frontend README still describe an earlier empty
+  frontend and are stale; they were not rewritten as part of this QA phase.
+- Ran the complete CRUD workflow against an isolated SQLite clone, never the
+  project database. Browser verification covered create (201 and persisted
+  fields), list/detail reads and timestamps, edit (full PUT payload, persisted
+  values and refreshed details), delete cancellation (no request), successful
+  204 deletion, refreshed counts, and deletion of the selected task from its
+  details panel.
+- Verified All, To Do, In Progress, and Done filters; an empty filter result;
+  pagination across multiple pages; status changes while filtered; creation
+  while a filter was active (returned to All); and deleting the only task on
+  the last page (returned to the prior valid page). Empty state, toast,
+  loading, close/cancel controls, and duplicate-submit protection were also
+  checked.
+- Error-path browser checks used transient request interception against the
+  isolated app: GET 404/503/network/unexpected response; POST 422/503/network;
+  PUT 503; and DELETE 404/503/network. User-safe messages were shown without
+  backend details, failed forms/dialogs retained their values/view, and
+  failed operations showed no success notification. Duplicate create, update,
+  and delete attempts each sent only one request. Required fields and
+  start-after-due validation were checked; input maximums were 80/60/400
+  characters.
+- Compared the responsive React UI with the prototype at 1440x900,
+  1366x768, 768x1024, and 390x844 CSS pixels. No horizontal overflow was
+  detected. Mobile navigation opened and closed; the details panel and delete
+  confirmation remained within the mobile viewport. Light and dark theme
+  colors were both observed. No redesign was needed.
+- Focused security/reliability review found task input/schema validation,
+  parameterized SQLAlchemy expressions, generic API database errors, and no
+  React use of localStorage/sessionStorage, unsafe HTML insertion, `eval`, or
+  hard-coded secret literals. The React app renders API values as text.
+  Production risks remain: authentication/authorization is not implemented
+  (the “Signed in” sidebar label is static), no production CORS policy or
+  environment-based database configuration is present, and the users/roles/
+  projects modules are not part of the mounted task API.
+- Fixed a reproduced reliability defect: SQLite's second-resolution timestamp
+  trigger could leave `updated_at` unchanged on rapid PUTs. The update route
+  now assigns a UTC timestamp strictly later than the previous value, without
+  changing the database schema or trigger. Added a regression test that
+  simulates an unchanged trigger timestamp.
+- Phase 5 files changed: `backend/app/routers/tasks.py`,
+  `backend/tests/test_tasks_api.py`, and this work log.
+- Final verification: `Set-Location E:\task\backend; python -m pytest -q`
+  passed **64 tests** (13 third-party deprecation warnings).
+  `Set-Location E:\task\frontend; npm.cmd run build` succeeded. The isolated
+  browser-test database finished with 14 controlled records and
+  `integrity_check=ok`; no production records were used.
+- Final read-only check of `backend/people_connect.sqlite3`: **0 tasks**,
+  `integrity_check=ok`, and the existing updated_at trigger is present.
+- Remaining work/risks: resolve the stale handover documentation and make
+  production decisions for authentication, CORS, and database configuration
+  before deployment. No deployment or additional feature work was started.
+
+2026-11-17 - Phase 6: Production readiness and deployment preparation
+- Reviewed the application, requirements, existing project documentation,
+  Phase 5 report, test suites, database and environment setup. The current
+  app is a React/Vite frontend with a FastAPI/SQLAlchemy task API and SQLite.
+  No SRS was present. Git status could not be inspected because this workspace
+  has neither Git metadata nor an available Git CLI.
+- Prepared an environment-based configuration while preserving development
+  defaults. Backend settings now read APP_ENV, DATABASE_PATH and
+  CORS_ORIGINS; production requires an absolute persistent database path
+  outside the OS temp directory, refuses to start if the database file is
+  missing, and does not create, replace, or schema-initialize it. Production
+  CORS is exact-origin allowlisted and HTTPS-only; development still permits
+  local HTTP origins. FastAPI debug is disabled.
+- Frontend API requests use VITE_API_BASE_URL (default `/api`); Vite's proxy
+  remains development-only. Production builds reject HTTP API URLs and
+  malformed/non-root-relative values. The production URL must be HTTPS or a
+  root-relative same-origin path.
+- Added root/backend/frontend environment and ignore templates, separated
+  runtime and development Python dependencies, and documented startup,
+  one-time database provisioning, HTTPS/reverse proxy, SQLite persistence,
+  backup/restore, security gates, hosting options and estimated costs in
+  DEPLOYMENT.md. Corrected stale project status, architecture, next-step and
+  frontend handover documentation. No schema or API contract was changed.
+- Recommended a single low-cost Linux VM initially, with Caddy serving the
+  static frontend and proxying `/api` to one loopback-bound Uvicorn worker;
+  SQLite stays on persistent disk. The guide estimates a 2 GiB DigitalOcean
+  Droplet at US$12/month at the checked 2026-11-17 price (plus domain,
+  optional backups and taxes). No hosting was purchased and no deployment
+  was performed.
+- Security/operations risks remain and are documented: the API has no
+  authentication or authorization and is unsuitable for public real employee
+  data until access control is approved; no configured Alembic migrations,
+  scheduled backups, full transitive Python lock, staging/production host
+  test, or decision on public `/docs` and `/openapi.json` exposure exists.
+  Use HTTPS, exact CORS origins when needed, persistent protected storage,
+  and a tested backup/restore process before deployment.
+- Tests added for environment parsing, CORS restrictions and database startup
+  file safety. Final backend suite: **75 passed**, with 13 third-party
+  deprecation warnings. Targeted configuration/database tests: **14 passed**.
+  Frontend production build passed. Configuration builds accepted HTTPS and
+  default `/api`, and rejected HTTP and malformed API base values. Earlier
+  local smoke checks verified frontend and backend health over direct and
+  proxied paths, production health, and exact-origin CORS allow/deny behavior.
+- Database safety: verification used isolated test databases. The real
+  `backend/people_connect.sqlite3` SHA-256 matched its pre-verification
+  baseline; task count remains **0**, `PRAGMA integrity_check` returned `ok`,
+  and the existing updated_at trigger remains present. No real records were
+  modified.
+- Remaining pre-deployment work: approve authentication/authorization,
+  choose the host and domain, provide persistent storage and service
+  environment values, create a reproducible Python dependency lock, define
+  backup ownership/retention, and test provisioning/TLS/restart/CRUD/restore
+  on staging. No deployment or purchase was made.

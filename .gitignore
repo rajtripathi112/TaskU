@@ -1,0 +1,59 @@
+# Environment files (example templates are safe to commit)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Local Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.coverage
+.coverage.*
+htmlcov/
+build/
+
+# Local databases and SQLite sidecars
+*.sqlite
+*.sqlite3
+*.db
+*-wal
+*-shm
+*-journal
+
+# Local credentials and private keys
+*.pem
+*.key
+*.p12
+*.pfx
+.aws/
+.ssh/
+.npmrc
+.pypirc
+.netrc
+**/id_rsa
+**/id_ed25519
+**/id_ecdsa
+
+# Frontend build and package artifacts
+node_modules/
+dist/
+coverage/
+
+# Logs and editor/OS files
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+/.vscode/
+.idea/
+.history/
+.DS_Store
+Thumbs.db
